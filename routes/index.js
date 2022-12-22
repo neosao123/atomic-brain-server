@@ -1,5 +1,4 @@
 const path = require("path");
-
 const router = require("express").Router();
 const refreshTokenRoutes = require("./refreshtoken");
 const userRoutes = require("./user");
@@ -28,7 +27,7 @@ router.use("/api/tutor", tutorRoutes);
 router.use("/api/student", studentRoutes);
 router.use("/api/admin", adminRoutes);
 router.use("/api/admin/tutorcharges", tutorCharges);
-router.use("/api/admin/coursetutorlist", courseTutorList);
+router.use("/api/admin/coursetutor", courseTutorList);
 
 
 // If no API routes are hit, send the React app

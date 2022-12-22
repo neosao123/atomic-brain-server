@@ -1,43 +1,88 @@
 require("dotenv").config();
 const coursetutorModel = require("../models/coursetutorModel");
 module.exports = {
-  fetchCourseTutor: async (req, res) => {
+  fetchCourseTutors: async (req, res) => {
     try {
-      coursetutorModel.findOne(
-        {
-          tutorId: { $eq: req.body.trainerId },
-        },
-        (err, tutor) => {
-          if (err) res.status(400).send({ ErrorOccured: err });
-          if (tutor) res.status(200).send({ msg: "data Found", data: tutor });
-          else res.status(300).send({ msg: "No data Found" });
-        }
-      );
+      coursetutorModel.find((err, tutor) => {
+        if (err) res.status(400).send({ ErrorOccured: err });
+        if (tutor) res.status(200).send({ msg: "data Found", data: tutor });
+        else res.status(300).send({ msg: "No data Found" });
+      });
     } catch {
       res.status(200).send({ err: 500 });
     }
   },
 
-  createCourseTutorList: async (req, res) => {
+  create: async (req, res) => {
     try {
       let body = req.body;
-      const coursetutor = await coursetutorModel;
-      if (coursetutor) {
-        const coursetutors = coursetutorModel({
-          tutorId: body.tutorId,
-          courseId: body.courseId,
+      tutorId = body.tutorId;
+      courseId = body.courseId;
+
+      const coursetutor = await coursetutorModel.findOne({
+        tutorId: { $eq: tutorId },
+        courseId: { $eq: courseId },
+      });
+
+      if (coursetutor === null) {
+        const coursetutors = new coursetutorModel({
+          tutorId: tutorId,
+          courseId: courseId,
           isActive: body.isActive,
         });
 
         const result = await coursetutors.save();
         return res.status(200).json({
           err: 200,
-          message: "Course tutor List created successfully",
+          message: "Tutor assigned successfully",
           data: result,
+        });
+      } else {
+        res.status(300).json({
+          err: 300,
+          message: "Tutor is already assigned for this course",
         });
       }
     } catch (error) {
       res.status(200).json({ err: 400, message: error.message });
+    }
+  },
+
+  update: async (req, res) => {
+    try {
+      let body = req.body;
+      tutorId = body.tutorId;
+      courseId = body.courseId;
+      isActive = body.isActive;
+      _id = body._id;
+      const updateTutor = await coursetutorModel.findOne({
+        _id: { $ne: _id },
+        tutorId: { $eq: tutorId },
+        courseId: { $eq: courseId },
+        isActive: { $eq: isActive },
+      });
+
+      if (updateTutor === null) {
+        const coursetutors = await coursetutorModel({
+          tutorId: tutorId,
+          courseId: courseId,
+          isActive: isActive,
+        });
+
+        const result = coursetutors.save();
+        return res.status(200).json({
+          err: 200,
+          message: "Tutor updated successfully",
+          data: result,
+        });
+      } else {
+        return res.status(300).json({
+          err: 300,
+          message: "Tutor is not available",
+        });
+      }
+    } catch (err) {
+      res.status(200).json({ err: 400, message: err.message });
     }
   },
 

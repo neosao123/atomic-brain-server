@@ -55,6 +55,8 @@ module.exports = {
 		} catch (error) {
 			res.status(500).send("Failed to get course list.");
 		}
+
+		consol.log(data);
 	},
 	edit: async (req, res) => {
 		try {

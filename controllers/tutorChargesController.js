@@ -15,11 +15,10 @@ module.exports = {
     );
   },
 
-
   saveAndUpdateTutorCharges: async (req, res) => {
     try {
       let body = req.body;
-  
+
       const tutorCharge = await TutorChargesModel.findOne({
         tutorId: { $eq: body.tutorId },
       }).limit(1);
@@ -34,13 +33,11 @@ module.exports = {
           maxFreeSkipCount: body.maxFreeSkipCount,
         });
         tutorCharges.save().then((result) => {
-          return res
-            .status(200)
-            .send({
-              err: 200,
-              message: "Charges Saved SuccessFully",
-              data: result,
-            });
+          return res.status(200).send({
+            err: 200,
+            message: "Charges Saved SuccessFully",
+            data: result,
+          });
         });
       } else {
         let body = req.body;
