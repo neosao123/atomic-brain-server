@@ -1,5 +1,10 @@
 require("dotenv").config();
+const mongoose = require("mongoose");
+const courseModel = require("../models/courseModel");
 const coursetutorModel = require("../models/coursetutorModel");
+const purchasedCoursesModel = require("../models/purchasedCoursesModel");
+const syllabusModel = require("../models/syllabusModel");
+
 module.exports = {
   fetchCourseTutors: async (req, res) => {
     try {
@@ -29,6 +34,7 @@ module.exports = {
           tutorId: tutorId,
           courseId: courseId,
           isActive: body.isActive,
+          createdAt: Date(),
         });
 
         const result = await coursetutors.save();
@@ -44,7 +50,7 @@ module.exports = {
         });
       }
     } catch (error) {
-      res.status(200).json({ err: 400, message: error.message });
+      res.status(200).json({ err: 500, message: error });
     }
   },
 
@@ -59,94 +65,287 @@ module.exports = {
         _id: { $ne: _id },
         tutorId: { $eq: tutorId },
         courseId: { $eq: courseId },
-        isActive: { $eq: isActive },
       });
 
       if (updateTutor === null) {
-        const coursetutors = await coursetutorModel({
-          tutorId: tutorId,
-          courseId: courseId,
-          isActive: isActive,
-        });
-
-        const result = coursetutors.save();
+        const coursetutors = await coursetutorModel.findByIdAndUpdate(
+          _id,
+          {
+            $set: {
+              tutorId: tutorId,
+              courseId: courseId,
+              isActive: isActive,
+              updatedAt: Date(),
+            },
+          },
+          { new: true }
+        );
         return res.status(200).json({
           err: 200,
           message: "Tutor updated successfully",
-          data: result,
+          data: coursetutors,
         });
       } else {
-        return res.status(300).json({
+        return res.status(200).json({
           err: 300,
           message: "Tutor is not available",
         });
       }
     } catch (err) {
-      res.status(200).json({ err: 400, message: err.message });
+      res.status(200).json({ err: 500, message: err.message });
     }
   },
 
   fetchcourseTutorList: async (req, res) => {
-    coursetutorModel
-      .aggregate([
+    try {
+      const data = await coursetutorModel.aggregate([
         {
           $lookup: {
             from: "users",
-            // localfield: "tutorId",
-            // foreignField: "_id",
-            let: { tutor: "tutor" },
-            pipeline: [{ $limit: 1 }],
+            localField: "tutorId",
+            foreignField: "_id",
             as: "tutor",
+          },
+        },
+        {
+          $unwind: {
+            path: "$tutor",
+            preserveNullAndEmptyArrays: false,
           },
         },
         {
           $lookup: {
             from: "courses",
-            // localfield: "tutorId",
-            // foreignField: "_id",
-            let: { courses: "courses" },
-            pipeline: [{ $limit: 1 }],
-            as: "courses",
+            localField: "courseId",
+            foreignField: "_id",
+            as: "course",
+          },
+        },
+        {
+          $unwind: {
+            path: "$course",
+            preserveNullAndEmptyArrays: false,
           },
         },
         {
           $project: {
-            "tutor.firstName": 1,
-            "tutor.lastName": 1,
-            "tutor.email": 1,
-            "tutor.phone": 1,
-            "tutor.profilePic": 1,
-            "courses.title": 1,
+            _id: 1,
+            courseId: 1,
+            courseTitle: "$course.title",
+            courseType: "$course.type",
+            coursePrice: "$course.price",
+            coursePic: "$course.image",
+            courseShortDesc: "$course.shortDescription",
+            courseDesc: "$course.description",
+            courseSlug: "$course.slug",
+            tutorId: 1,
+            tutorName: {
+              $concat: ["$tutor.firstName", " ", "$tutor.lastName"],
+            },
+            tutorEmail: "$tutor.email",
+            tutorPicture: "$tutor.profilePic",
+            tutorMobile: "$tutor.phone",
             isActive: 1,
+            updatedAt: 1,
           },
         },
+      ]);
 
-        //$lookup: {
-        //   from: "courses",
-        //   // localfield: "courseId",
-        //   // foreignField: "_id",
-        //   let: { courses: 'courses' },
-        //   pipeline: [ {$limit: 1} ],
-        //   as: "courses",
-        // },
-        // },
-        // {
-        //   $project: {
-        //     "tutor.firstName":   1,
-        //     "tutor.lastName": 1,
-        //     "tutor.email": 1,
-        //     "tutor.phone": 1,
-        //     // "courses.title": 1,
-        //   },
-        // },
-      ])
-      .exec((err, data) => {
-        if (err) return res.status(200).send({ err: 400, message: err });
-        if ((data, data.length >= 0))
-          return res
-            .status(200)
-            .send({ err: 200, msg: "data found", data: data });
-        else res.status(200).send({ err: 300, msg: "No data found", data: [] });
-      });
+      if (data !== null) {
+        return res.status(200).send({
+          err: 200,
+          msg: "Data found",
+          count: data.length,
+          data: data,
+        });
+      } else {
+        return res.status(200).send({ err: 300, msg: "No data found" });
+      }
+    } catch (error) {
+      return res.status(200).send({ err: 500, msg: error.toString() });
+    }
   },
+
+  delete: async (req, res) => {
+    try {
+      coursetutorModel.findByIdAndDelete(req.body._id, (err, data) => {
+        if (err) res.status(400).send({ ErrorOccured: err });
+        if (data)
+          res.status(200).send({ err: 200, msg: "Deleted Successfully" });
+        else res.status(300).send({ err: 200, msg: "No record exists" });
+      });
+    } catch (ex) {
+      return res.status(500).send({ msg: ex.message });
+    }
+  },
+
+  filterCourseTutorList: async (req, res) => {
+    try {
+      const data = await coursetutorModel.aggregate([
+        {
+          $lookup: {
+            from: "users",
+            localField: "tutorId",
+            foreignField: "_id",
+            as: "tutor",
+          },
+        },
+        {
+          $unwind: {
+            path: "$tutor",
+            preserveNullAndEmptyArrays: false,
+          },
+        },
+        {
+          $lookup: {
+            from: "courses",
+            localField: "courseId",
+            foreignField: "_id",
+            as: "course",
+          },
+        },
+        {
+          $unwind: {
+            path: "$course",
+            preserveNullAndEmptyArrays: false,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            courseId: 1,
+            courseTitle: "$course.title",
+            courseType: "$course.type",
+            coursePrice: "$course.price",
+            coursePic: "$course.image",
+            courseShortDesc: "$course.shortDescription",
+            courseDesc: "$course.description",
+            courseSlug: "$course.slug" ?? null,
+            tutorId: 1,
+            tutorName: {
+              $concat: ["$tutor.firstName", " ", "$tutor.lastName"],
+            },
+            tutorEmail: "$tutor.email",
+            tutorPicture: "$tutor.profilePic",
+            tutorMobile: "$tutor.phone",
+            isActive: 1,
+            updatedAt: 1,
+          },
+        },
+      ]);
+
+      if (data !== null) {
+        return res.status(200).send({
+          err: 200,
+          msg: "Data found",
+          count: data.length,
+          data: data,
+        });
+      } else {
+        return res.status(200).send({ err: 300, msg: "No data found" });
+      }
+    } catch (error) {
+      return res.status(200).send({ err: 500, msg: error.toString() });
+    }
+  },
+
+  fetchallcoursedetails: async (req, res) => {
+    try {
+      let courseId = req.params.courseId;
+      var coursedata = await courseModel.findById(courseId);
+      if (coursedata) {
+        const syllabus = await syllabusModel.find(
+          {
+            courseId: { $eq: courseId },
+          },
+          {
+            _id: 1,
+            topicName: 1,
+            description: 1,
+          }
+        );
+
+        const tutors = await coursetutorModel.aggregate([
+          {
+            $match: {
+              isActive: 1,
+              courseId: mongoose.Types.ObjectId(courseId),
+            },
+          },  
+          {
+            $lookup: {
+              from: "courses",
+              localField: "courseId",
+              foreignField: "_id",
+              as: "course",
+            },
+          },
+          {
+            $unwind: {
+              path: "$course",
+              preserveNullAndEmptyArrays: false,
+            },
+          },
+          {
+            $lookup: {
+              from: "users",
+              localField: "tutorId",
+              foreignField: "_id",
+              as: "tutor",
+            },
+          },
+          {
+            $unwind: {
+              path: "$tutor",
+              preserveNullAndEmptyArrays: false,
+            },
+          },
+          {
+            $project: {
+              tutorId: 1,
+              tutorName: {
+                $concat: ["$tutor.firstName", " ", "$tutor.lastName"],
+              },
+              tutorEmail: "$tutor.email",
+              tutorPicture: "$tutor.profilePic",
+              tutorMobile: "$tutor.phone",
+              isActive: 1,
+              updatedAt: 1,
+            },
+          },
+        ]);
+
+        var alreadyBought = 0;
+        // db query an courseId = post.courseId  & studentId = post.studentId  & paymentStatus= "success"
+        let purchasedCourse = await purchasedCoursesModel.find({
+          courseId: { $eq: req.params.courseId },
+          studentId: { $eq: req.body.studentId },
+          paymentStatus: "success",
+        });
+
+        if (purchasedCourse.length > 0) {
+          alreadyBought = 1;
+        } else {
+          alreadyBought = 0;
+        }
+
+        var data = {
+          courseId: coursedata._id,
+          description: coursedata.description,
+          courseImage: coursedata.image,
+          shortdescription: coursedata.shortDescription,
+          title: coursedata.title,
+          price: coursedata.price ?? "0",
+          type: coursedata.type,
+          syllabus: syllabus,
+          tutor: tutors,
+          alreadyBought: alreadyBought,
+        };
+        res.status(200).send({ err: 200, msg: "data found", data: data });
+      }
+    } catch (ex) {
+      return res.status(200).send({ err: 500, msg: ex.message });
+    }
+  },
+
 };

@@ -1,9 +1,11 @@
-const router = require('express').Router();
+const router = require("express").Router();
 const CourseTutorController = require("../controllers/CourseTutorController");
 
-router.get("/fetchcoursetutor", CourseTutorController.fetchCourseTutors);
+router.get("/fetchcoursetutor", CourseTutorController.fetchcourseTutorList);
 router.post("/create", CourseTutorController.create);
-router.post("/update",CourseTutorController.update);
+router.post("/update", CourseTutorController.update);
+router.post("/delete", CourseTutorController.delete);
+router.post("/fetchdata/:courseId", CourseTutorController.fetchallcoursedetails);
 
 module.exports = router;
 
