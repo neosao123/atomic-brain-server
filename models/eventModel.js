@@ -51,6 +51,18 @@ const eventSchema = new mongoose.Schema({
 		required: false,
 		default: false,
 	},
+	courseId: {
+		type: mongoose.Schema.Types.ObjectId,
+		required: false,
+		ref: "courses"
+	},
+	classCode: {
+		type: String
+	},
+	classLink: {
+		type: String,
+		default: null
+	}
 });
 
 module.exports = mongoose.model("Events", eventSchema);

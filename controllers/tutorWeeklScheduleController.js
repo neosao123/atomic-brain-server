@@ -4,9 +4,11 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const secureHttps = process.env.SITE_HTTPS == "TRUE" ? true : false || false;
 const eventModel = require("../models/eventModel");
+const { default: mongoose } = require("mongoose");
 
 module.exports = {
   Create: (req, res) => {
+    // Create Recurring schedule for two months from now, for same week day
     try {
       const { tutorId, dayNumber, dayName, timeStart, timeEnd } = req.body;
       const TimeSlotSave = new TutorWeekScheduleModel({
@@ -19,16 +21,23 @@ module.exports = {
       });
       TimeSlotSave.save()
         .then((result) => {
+          console.log(result)
           var date = new Date();
+          console.log("date", date);
           var startDate = new Date(
             date.getFullYear(),
             date.getMonth(),
-            date.getDate()
+            date.getDate(),
+            0, 0, 0
+            // date.getHours(),
+            // date.getMinutes(),
+            // date.getSeconds()
           );
+          // var startDate = date;
           var endDate = new Date(
             date.getFullYear(),
-            date.getMonth() + 2,
-            date.getDate()
+            date.getMonth(),
+            date.getDate() + 21
           );
           var dates = [];
           var currentDate = startDate;
@@ -38,20 +47,33 @@ module.exports = {
             }
             currentDate.setDate(currentDate.getDate() + 1);
           }
+          let newEvent;
+          let existingEvents;
           dates.forEach(async (date) => {
-            // create events for each particular week day on the dates
-            const newEvent = new eventModel({
+            existingEvents = await eventModel.findOne({
               tutorId: tutorId,
-              timeStart: timeStart,
-              timeEnd: timeEnd,
-              sessionDate: date,
-              sessionType: "FREE",
               dayNumber: dayNumber,
               dayName: dayName,
+              timeStart: timeStart,
+              timeEnd: timeEnd,
+              sessionType: "FREE",
+              sessionDate: date,
             });
-            await newEvent.save();
+            if (existingEvents) {
+            } else {
+              newEvent = new eventModel({
+                tutorId: tutorId,
+                timeStart: timeStart,
+                timeEnd: timeEnd,
+                sessionDate: date,
+                sessionType: "FREE",
+                dayNumber: dayNumber,
+                dayName: dayName,
+              });
+              console.log(newEvent)
+              await newEvent.save();
+            }
           });
-
           return res
             .status(200)
             .send({ err: 200, message: "Time slot added successfully" });
@@ -66,6 +88,8 @@ module.exports = {
       res.status(400).json({ message: error.message });
     }
   },
+
+
   Update: (req, res) => {
     try {
       TutorWeekScheduleModel.findOneAndUpdate(
@@ -118,23 +142,55 @@ module.exports = {
       return res.status(500).send({ msg: ex.message });
     }
   },
+
   Fetch_Slot_By_Tutor_Id: (req, res) => {
     var query = { tutorId: req.body.tutorId };
     TutorWeekScheduleModel.find(query, (err, data) => {
-      if (err)
-        return res
-          .status(200)
-          .send({ err: 400, message: "Failed to find the records" });
+      if (err) return res.status(200).send({ err: 400, message: "Failed to find the records" });
       if (data) return res.status(200).send({ msg: "Data found", data: data });
       else return res.status(200).send({ msg: "No user found", data: [] });
     });
   },
+
+  fetch_Todays_Scedule_Of_Tutor: (req, res) => {
+    try {
+      eventModel.find({
+        tutorId: mongoose.Types.ObjectId(req.body.tutorId),
+        sessionDate: req.body.sessionDate,
+        sessionType: req.body.sessionType
+      }, (err, data) => {
+        if (data) {
+          res.status(200).send({ err: 200, data: data, msg: "Data found", length: data.length });
+        } else {
+          res.status(200).send({ err: 300, msg: "No data found" });
+        }
+      });
+    } catch {
+      res.status(500).send({ err: "Server Error" });
+    }
+
+  },
+
+  fetch_SessionDates_By_TutorId: (req, res) => {
+    let currentDate = new Date()
+    eventModel.find({
+      tutorId: mongoose.Types.ObjectId(req.body.tutorId),
+      sessionType: req.body.sessionType,
+      sessionDate: { $gte: currentDate }
+    }, (err, data) => {
+      if (err) {
+        res.status(500).send({ err: err.message });
+      } else {
+        res.status(200).send({ err: 200, data: data });
+      }
+    });
+  },
+
   createReccuringWeeklySchedule: async (req, res) => {
     // Create Recurring schedule for two months from now, for same week day
     try {
       const { tutorId, dayNumber, dayName, timeStart, timeEnd, sessionType } =
         req.body;
-
       const newWeekSchedule = new TutorWeekScheduleModel({
         tutorId: tutorId,
         dayName: dayName,
@@ -165,24 +221,58 @@ module.exports = {
         }
         currentDate.setDate(currentDate.getDate() + 1);
       }
-      var query = {};
+
       let newEvent;
+      let existingEvents;
+
       dates.forEach(async (date) => {
         // create events for each particular week day on the dates
         // filter data
-        newEvent = new eventModel({
+        // check data
+        // if data available - do not create data
+        // if data unavailable - create data
+
+        existingEvents = await eventModel.findOne({
           tutorId: tutorId,
-          timeStart: timeStart,
-          timeEnd: timeEnd,
-          sessionDate: date,
-          sessionType: sessionType,
           dayNumber: dayNumber,
           dayName: dayName,
+          timeStart: timeStart,
+          timeEnd: timeEnd,
+          sessionType: sessionType,
+          sessionDate: date,
         });
+        if (existingEvents) {
+          res.status(200).send({ err: 301, message: "already slots created" });
+        } else {
+          newEvent = new eventModel({
+            tutorId: tutorId,
+            timeStart: timeStart,
+            timeEnd: timeEnd,
+            sessionDate: date,
+            sessionType: sessionType,
+            dayNumber: dayNumber,
+            dayName: dayName,
+          });
 
-        await newEvent.save();
+          await newEvent.save().then(
+            (data) => {
+              console.log(data)
+              res.status(200).send({
+                err: 200,
+                message: "Time slot created successfully",
+                data: data,
+              });
+            },
+            (err) => {
+              res.status(200).send({
+                err: 300,
+                message: "Failed to create slot",
+                data: err,
+              });
+            }
+          );
+        }
       });
-      return res.status(200).send({ message: "Time slot added successfully" });
     } catch (err) {
       res.status(500).send({ msg: "Internal Server Error", err: err });
     }

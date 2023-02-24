@@ -44,7 +44,7 @@ module.exports = {
         let { filename } = req.file;
         updateData.profilePic = filename;
       }
-                                    
+
       const updateResult = await UserModel.findByIdAndUpdate(
         userId,
         updateData,

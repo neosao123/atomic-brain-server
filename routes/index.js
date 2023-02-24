@@ -14,6 +14,7 @@ const middleware = require("../middleware/auth");
 const tutorCharges = require("./tutorCharges");
 const courseTutorList = require("./courseTutorList");
 const purchasedCourse = require("./purchasedCourse");
+const bankdetails = require("./bankdetails");
 // API routes
 router.use("/api/refreshtoken", refreshTokenRoutes);
 router.use("/api/users", userRoutes);
@@ -30,6 +31,7 @@ router.use("/api/admin/coursetutor", courseTutorList);
 router.use("/api/student/coursetutor", courseTutorList);
 router.use("/api/student", purchasedCourse);
 router.use("/api/tutor", purchasedCourse);
+router.use("/api/user", bankdetails);
 // If no API routes are hit, send the React app
 
 router.use(function (req, res) {

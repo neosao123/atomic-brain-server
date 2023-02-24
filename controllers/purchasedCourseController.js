@@ -89,7 +89,6 @@ module.exports = {
               syllabusDescription: studentClass.syllabusDescription,
             });
           });
-
           res.status(200).json({
             err: 200,
             msg: "Course Purchased And Classes Inserted Successfully",
@@ -98,6 +97,40 @@ module.exports = {
         }
       }
     }
+  },
+
+  fetchTutorBySyllabusCode: async (req, res) => {
+    try {
+      let body = req.body;
+      let tutorByCourseId = await StudentClasses.find({
+        courseId: { $eq: mongoose.Types.ObjectId(body.courseId) },
+        syllabusCode: { $eq: body.syllabusCode }
+      })
+      if (tutorByCourseId !== null) {
+        return res.status(200).send({ err: 200, msg: "data found", data: tutorByCourseId })
+      } else {
+        return res.status(200).send({ err: 300, msg: "No data found" })
+      }
+    } catch {
+      res.status(500).send({ err: 500 })
+    }
+  }
+  ,
+  syllabusPurschase: async (req, res) => {
+    try {
+      let body = req.body;
+      let fetchAllSyllaybus = await CourseSyllabus.find({
+        courseId: { $eq: body.courseId },
+      })
+      if (fetchAllSyllaybus !== null) {
+        return res.status(200).send({ err: 200, msg: "data found", data: fetchAllSyllaybus })
+      } else {
+        return res.status(200).send({ err: 300, msg: "No data found" })
+      }
+    } catch {
+      return res.status(500).send({ err: 500, msg: "server Error" })
+    }
+
   },
 
   truncate: async (req, res) => {
@@ -150,6 +183,7 @@ module.exports = {
       },
       {
         $project: {
+          courseId: "$course._id",
           courseTitle: "$course.title",
           coursePriceIncludingGST: 1 ?? null,
           coursePrice: 1,

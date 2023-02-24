@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Schema;
 
-
 const CourseTutorSchema = new mongoose.Schema({
   tutorId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -16,7 +15,7 @@ const CourseTutorSchema = new mongoose.Schema({
   isActive: {
     type: Number,
     maxLength: 1,
-    default:0
+    default: 0
   },
   isDelete: {
     type: Number,
@@ -26,13 +25,13 @@ const CourseTutorSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
-  updatedAt:{
-    type:Date,
-    default:null
+  updatedAt: {
+    type: Date,
+    default: null
   },
-  deletedAt:{
-    type:Date,
-    default:null
+  deletedAt: {
+    type: Date,
+    default: null
   }
 });
 

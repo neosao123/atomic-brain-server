@@ -16,10 +16,12 @@ module.exports = {
           return res.status(200).send({ msg: "Data found", data: data });
         else return res.status(200).send({ msg: "No user found", data: [] });
       });
-    } catch (error) {
+    } catch {
       res.status(400).send("Failed to get Syllabus list.");
     }
   },
+
+
   create: async (req, res) => {
     try {
       const { courseId, topicName, description } = req.body;

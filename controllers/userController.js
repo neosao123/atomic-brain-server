@@ -8,6 +8,7 @@ const Token = require("../models/token");
 const sendEmail = require("../utils/sendEmail");
 
 const crypto = require("crypto");
+const { default: mongoose } = require("mongoose");
 
 module.exports = {
   SendVerificationEmail: async (req, res) => {
@@ -28,9 +29,8 @@ module.exports = {
         token: token,
       });
       await newToken.save();
-      const url = `<a href="${secureHttps ? "https://" : "http://"}${
-        process.env.BASE_URL
-      }/verify?token=${token}&UserId=${user._id}">Verify your email</a>`;
+      const url = `<a href="${secureHttps ? "https://" : "http://"}${process.env.BASE_URL
+        }/verify?token=${token}&UserId=${user._id}">Verify your email</a>`;
       console.log(url);
       await sendEmail(email, "Please Verify your email", url);
       res.status(200).send("Email sent");
@@ -74,7 +74,7 @@ module.exports = {
     }
   },
 
-  CheckUser: (req, res) => {},
+  CheckUser: (req, res) => { },
 
   LoginUser: async (req, res) => {
     try {
@@ -110,7 +110,7 @@ module.exports = {
                 // generate access and refresh tokens
                 const expiry = "900s";
                 const accessToken = jwt.sign(
-                  { id: user.email },
+                  { id: user._id },
                   process.env.ACCESS_TOKEN_SECRET,
                   { expiresIn: expiry }
                 ); //30s
@@ -168,7 +168,6 @@ module.exports = {
       let hash = bcrypt.hashSync(req.body.password, 10);
 
       userModel.find({ email: req.body.email }, function (err, users) {
-        console.log(users);
         if (err)
           return res.status(400).send({
             err: 400,
@@ -183,7 +182,6 @@ module.exports = {
           });
 
         userModel.find({ phone: req.body.phone }, function (err, users) {
-          console.log(users);
           if (err)
             return res.status(400).send({
               err: 400,
@@ -293,13 +291,26 @@ module.exports = {
   },
 
   // fetch user by id
+  // FetchUserById: (req, res) => {
+  //   userModel.findById(req.params.UserId, (err, user) => {
+  //     if (err) res.status(400).send({ ErrorOccured: err });
+  //     if (user)
+  //       res.status(200).send({ err: 200, msg: "Data found", data: user });
+  //     else res.status(200).send({ err: 300, msg: "No user found" });
+  //   });
+  // },
+
   FetchUserById: (req, res) => {
-    userModel.findById(req.params.UserId, (err, user) => {
-      if (err) res.status(400).send({ ErrorOccured: err });
-      if (user)
-        res.status(200).send({ err: 200, msg: "Data found", data: user });
-      else res.status(200).send({ err: 300, msg: "No user found" });
-    });
+    userModel.findOne(
+      {
+        _id: { $eq: mongoose.Types.ObjectId(req.body.userId) },
+      },
+      (err, data) => {
+        if (err) res.status(400).send({ ErrorOccured: err });
+        if (data) res.status(200).send({ msg: "Data Found", data: data });
+        else res.status(404).send({ msg: "No data Found", data: err });
+      }
+    );
   },
 
   // Fetch uses by role type
@@ -357,7 +368,6 @@ module.exports = {
   },
 
   UpdatePassword: async (req, res) => {
-   
     try {
       const { userId, oldPassword, newPassword } = req.body;
 

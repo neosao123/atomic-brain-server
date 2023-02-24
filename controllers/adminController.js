@@ -73,97 +73,96 @@ module.exports = {
   },
 
   fetchCoursePurchasedByStudent: async (req, res) => {
-    if (
-      req.query.courseId !== null &&
-      req.query.studentId === null &&
-      req.query.paymentStatus === null
-    ) {
-      var matchStr = {
-        $match: {
-          courseId: { $eq: mongoose.Types.ObjectId(req.query.courseId) },
-        },
-      };
-    } else if (
-      req.query.courseId === null &&
-      req.query.studentId !== null &&
-      req.query.paymentStatus === null
-    ) {
-      var matchStr = {
-        $match: {
-          studentId: { $eq: mongoose.Types.ObjectId(req.query.studentId) },
-        },
-      };
-    } else if (
-      req.query.courseId === null &&
-      req.query.studentId === null &&
-      req.query.paymentStatus !== null
-    ) {
-      var matchStr = {
-        $match: {
-          $eq: req.query.paymentStatus,
-        },
-      };
-    } else if (
-      req.query.courseId !== null &&
-      req.query.studentId !== null &&
-      req.query.paymentStatus === null
-    ) {
-      var matchStr = {
-        $match: {
-          studentId: { $eq: mongoose.Types.ObjectId(req.query.studentId) },
-          courseId: { $eq: mongoose.Types.ObjectId(req.query.courseId) },
-        },
-      };
-    } else if (
-      req.query.courseId === null &&
-      req.query.studentId !== null &&
-      req.query.paymentStatus !== null
-    ) {
-      var matchStr = {
-        $match: {
-          studentId: { $eq: mongoose.Types.ObjectId(req.query.studentId) },
-          paymentStatus: { $eq: req.query.paymentStatus },
-        },
-      };
-    } else if (
-      req.query.courseId !== null &&
-      req.query.studentId === null &&
-      req.query.paymentStatus !== null
-    ) {
-      var matchStr = {
-        $match: {
-          studentId: { $eq: mongoose.Types.ObjectId(req.query.studentId) },
-          paymentStatus: { $eq: req.query.paymentStatus },
-        },
-      };
-    } else if (
-      req.query.courseId !== null &&
-      req.query.studentId !== null &&
-      req.query.paymentStatus !== null
-    ) {
-      var matchStr = {
-        $match: {
-          studentId: { $eq: mongoose.Types.ObjectId(req.query.studentId) },
-          courseId: { $eq: mongoose.Types.ObjectId(req.query.courseId) },
-          paymentStatus: { $eq: req.query.paymentStatus },
-        },
-      };
-    } else if (
-      req.query.courseId === null &&
-      req.query.studentId === null &&
-      req.query.paymentStatus === null
-    ) {
-      var matchStr = {
-        $match: {
-          studentId: "",
-          courseId: "",
-          paymentStatus: "",
-        },
-      };
-    }
+    // if (
+    //   req.query.courseId !== null &&
+    //   req.query.studentId === null &&
+    //   req.query.paymentStatus === null
+    // ) {
+    //   var matchStr = {
+    //     $match: {
+    //       courseId: { $eq: mongoose.Types.ObjectId(req.query.courseId) },
+    //     },
+    //   };
+    // } else if (
+    //   req.query.courseId === null &&
+    //   req.query.studentId !== null &&
+    //   req.query.paymentStatus === null
+    // ) {
+    //   var matchStr = {
+    //     $match: {
+    //       studentId: { $eq: mongoose.Types.ObjectId(req.query.studentId) },
+    //     },
+    //   };
+    // } else if (
+    //   req.query.courseId === null &&
+    //   req.query.studentId === null &&
+    //   req.query.paymentStatus !== null
+    // ) {
+    //   var matchStr = {
+    //     $match: {
+    //       $eq: req.query.paymentStatus,
+    //     },
+    //   };
+    // } else if (
+    //   req.query.courseId !== null &&
+    //   req.query.studentId !== null &&
+    //   req.query.paymentStatus === null
+    // ) {
+    //   var matchStr = {
+    //     $match: {
+    //       studentId: { $eq: mongoose.Types.ObjectId(req.query.studentId) },
+    //       courseId: { $eq: mongoose.Types.ObjectId(req.query.courseId) },
+    //     },
+    //   };
+    // } else if (
+    //   req.query.courseId === null &&
+    //   req.query.studentId !== null &&
+    //   req.query.paymentStatus !== null
+    // ) {
+    //   var matchStr = {
+    //     $match: {
+    //       studentId: { $eq: mongoose.Types.ObjectId(req.query.studentId) },
+    //       paymentStatus: { $eq: req.query.paymentStatus },
+    //     },
+    //   };
+    // } else if (
+    //   req.query.courseId !== null &&
+    //   req.query.studentId === null &&
+    //   req.query.paymentStatus !== null
+    // ) {
+    //   var matchStr = {
+    //     $match: {
+    //       studentId: { $eq: mongoose.Types.ObjectId(req.query.studentId) },
+    //       paymentStatus: { $eq: req.query.paymentStatus },
+    //     },
+    //   };
+    // } else if (
+    //   req.query.courseId !== null &&
+    //   req.query.studentId !== null &&
+    //   req.query.paymentStatus !== null
+    // ) {
+    //   var matchStr = {
+    //     $match: {
+    //       studentId: { $eq: mongoose.Types.ObjectId(req.query.studentId) },
+    //       courseId: { $eq: mongoose.Types.ObjectId(req.query.courseId) },
+    //       paymentStatus: { $eq: req.query.paymentStatus },
+    //     },
+    //   };
+    // } else if (
+    //   req.query.courseId === null &&
+    //   req.query.studentId === null &&
+    //   req.query.paymentStatus === null
+    // ) {
+    //   var matchStr = {
+    //     $match: {
+    //       studentId: "",
+    //       courseId: "",
+    //       paymentStatus: "",
+    //     },
+    //   };
+    // }
 
     let data = await purchasedCoursesModel.aggregate([
-      matchStr,
       {
         $lookup: {
           from: "courses",

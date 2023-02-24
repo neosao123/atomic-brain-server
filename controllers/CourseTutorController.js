@@ -271,7 +271,7 @@ module.exports = {
               isActive: 1,
               courseId: mongoose.Types.ObjectId(courseId),
             },
-          },  
+          },
           {
             $lookup: {
               from: "courses",
@@ -348,4 +348,15 @@ module.exports = {
     }
   },
 
+  fetchTutorByCourseId: async (req, res) => {
+    let body = req.body;
+    let tutor = await coursetutorModel.find({
+      courseId: { $eq: mongoose.Types.ObjectId(body.courseId) },
+    })
+    if (tutor !== null && tutor.length > 0) {
+      return res.status(200).send({ err: 200, msg: "data found", data: tutor })
+    } else {
+      return res.status(200).send({ err: 300, msg: "No data found" })
+    }
+  }
 };

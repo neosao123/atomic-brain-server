@@ -132,12 +132,6 @@ module.exports = {
         { _id: req.params.id },
         { $set: { isDelete: true } }
       );
-      /*
-            const imageName = course.image;
-			if (imageName != "") {
-				deleteFile(path.join(__dirname, "../uploads/courses/" + imageName));
-			}
-            */
       return res
         .status(200)
         .json({ err: 200, message: "Course deleted successfully" });
